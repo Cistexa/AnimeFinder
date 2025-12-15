@@ -14,7 +14,9 @@ const PORT = process.env.PORT || 4000;
 app.use(cors({
   origin: [
     "http://localhost:5173",
-    "https://anime-finder-lf32-ojc285rvc-huseyin-cinars-projects.vercel.app" 
+    "https://anime-finder-lf32-azuttbr8h-huseyin-cinars-projects.vercel.app",
+    "https://anime-finder-huseyin-cinars-projects.vercel.app", 
+    "https://anime-finder.vercel.app" 
   ],
   credentials: true
 }));
