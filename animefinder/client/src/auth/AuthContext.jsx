@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
 
 const AuthContext = createContext(null);
-const API_BASE = "http://localhost:5000/api";
+const API_BASE = "https://animefinder-mjre.onrender.com/api";
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
