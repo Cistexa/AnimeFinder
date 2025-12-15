@@ -16,7 +16,7 @@ app.use(cors({
     "http://localhost:5173",
     "https://anime-finder-lf32-azuttbr8h-huseyin-cinars-projects.vercel.app",
     "https://anime-finder-huseyin-cinars-projects.vercel.app", 
-    "https://anime-finder.vercel.app" 
+    "https://animefinder.vercel.app" 
   ],
   credentials: true
 }));
