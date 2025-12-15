@@ -11,12 +11,13 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 4000;
 
-app.use(
-  cors({
-    origin: "http://localhost:5173",
-    credentials: true,
-  })
-);
+app.use(cors({
+  origin: [
+    "http://localhost:5173",
+    "https://anime-finder-lf32-ojc285rvc-huseyin-cinars-projects.vercel.app" 
+  ],
+  credentials: true
+}));
 app.use(express.json());
 
 app.use("/api", authRouter);
