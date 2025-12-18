@@ -12,12 +12,19 @@ const app = express();
 const PORT = process.env.PORT || 4000;
 
 app.use(cors({
-  origin: [
-    "http://localhost:5173",
-    "https://animefinder-5jzk-b3vwn9uz8-huseyin-cinars-projects.vercel.app",
-    "https://anime-finder-huseyin-cinars-projects.vercel.app", 
-    "https://animefinder.vercel.app" 
-  ],
+  origin: (origin, callback) => {
+    const allowedOrigins = [
+      "http://localhost:5173",
+      "http://localhost:3000",
+    ];
+    
+    // Tüm Vercel domainleri izin ver (cinars-projects.vercel.app)
+    if (!origin || origin.includes("vercel.app") || origin.includes("localhost")) {
+      callback(null, true);
+    } else {
+      callback(null, false);
+    }
+  },
   credentials: true,
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization"]
