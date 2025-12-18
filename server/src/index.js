@@ -11,23 +11,39 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 4000;
 
+const allowedOrigins = [
+  "http://localhost:5173",
+  "http://localhost:3000",
+  "https://anime-finder-mj8m-calqobm33-huseyin-cinars-projects.vercel.app",
+  "https://animefinder-5jzk-b3vwn9uz8-huseyin-cinars-projects.vercel.app",
+  "https://anime-finder-huseyin-cinars-projects.vercel.app",
+  "https://animefinder.vercel.app",
+];
+
 app.use(cors({
-  origin: (origin, callback) => {
-    const allowedOrigins = [
-      "http://localhost:5173",
-      "http://localhost:3000",
-    ];
-    
-    // Tüm Vercel domainleri izin ver (cinars-projects.vercel.app)
-    if (!origin || origin.includes("vercel.app") || origin.includes("localhost")) {
-      callback(null, true);
-    } else {
-      callback(null, false);
+  origin: function (origin, callback) {
+    // Eğer origin undefined ise (same-origin requests) izin ver
+    if (!origin) {
+      return callback(null, true);
     }
+    
+    // Vercel domainlerine wildcard izin ver
+    if (origin.includes("vercel.app")) {
+      return callback(null, true);
+    }
+    
+    // Localhost'a izin ver
+    if (origin.includes("localhost")) {
+      return callback(null, true);
+    }
+    
+    // Diğer originler için izin verme
+    callback(new Error("CORS not allowed"));
   },
   credentials: true,
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-  allowedHeaders: ["Content-Type", "Authorization"]
+  allowedHeaders: ["Content-Type", "Authorization"],
+  optionsSuccessStatus: 200
 }));
 app.use(express.json());
 
