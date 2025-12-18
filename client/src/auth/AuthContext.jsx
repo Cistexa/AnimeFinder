@@ -1,7 +1,12 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
 
 const AuthContext = createContext(null);
-const API_BASE = "https://animefinder-mjre.onrender.com/api";
+
+// API_BASE URL'sini otomatik belirle
+const API_BASE = 
+  typeof window !== "undefined" && window.location.origin.includes("localhost")
+    ? "http://localhost:4000/api"
+    : "https://animefinder-mjre.onrender.com/api";
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
