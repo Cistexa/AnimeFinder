@@ -14,11 +14,13 @@ const PORT = process.env.PORT || 4000;
 app.use(cors({
   origin: [
     "http://localhost:5173",
-    "https://animefinder-mjre.onrender.com/api",
+    "https://animefinder-5jzk-b3vwn9uz8-huseyin-cinars-projects.vercel.app",
     "https://anime-finder-huseyin-cinars-projects.vercel.app", 
     "https://animefinder.vercel.app" 
   ],
-  credentials: true
+  credentials: true,
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"]
 }));
 app.use(express.json());
 
