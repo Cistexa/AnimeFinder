@@ -1,0 +1,38 @@
+# 1. Adım: Go Builder (Derleme aşaması)
+FROM golang:1.21-alpine AS builder
+
+WORKDIR /app
+
+# Gerekli dosyaları kopyala
+COPY go.mod go.sum ./
+RUN go mod download
+
+COPY . .
+
+# Uygulamayı derle
+RUN go build -o main main.go
+
+# 2. Adım: Çalıştırma Ortamı (Chrome içeren imaj)
+# Chromedp için gerekli kütüphaneleri içeren Alpine sürümü
+FROM alpine:latest
+
+# Chromium ve gerekli fontları yükle
+RUN apk add --no-cache \
+    chromium \
+    nss \
+    freetype \
+    harfbuzz \
+    ca-certificates \
+    ttf-freefont
+
+# Uygulamayı taşı
+WORKDIR /app
+COPY --from=builder /app/main .
+COPY --from=builder /app/.env . 
+
+# Chrome'un nerede olduğunu environment variable olarak belirt
+ENV CHROME_BIN=/usr/bin/chromium-browser
+ENV CHROME_PATH=/usr/bin/chromium-browser
+
+# Uygulamayı çalıştır
+CMD ["./main"]
