@@ -5,7 +5,11 @@ import RegisterPage from "./pages/RegisterPage.jsx";
 import MainPage from "./pages/MainPage.jsx";
 import SubPage from "./pages/SubPage.jsx";
 import AnimeFinderPage from "./pages/AnimeFinderPage.jsx";
+import NotificationsPage from "./pages/NotificationsPage.jsx";
 import { AuthProvider, useAuth } from "./auth/AuthContext.jsx";
+import NotificationBell from "./components/NotificationBell.jsx";
+import SearchBar from "./components/SearchBar.jsx";
+import ItemDetailsPage from "./pages/ItemDetailsPage.jsx";
 
 function RequireAuth({ children }) {
   const { user } = useAuth();
@@ -32,6 +36,8 @@ function Layout({ children }) {
             <Link to="/main">Main</Link>
             <Link to="/animefinder">Anime Finder</Link>
             <Link to="/sub">Subscriptions</Link>
+            <SearchBar />
+            <NotificationBell />
             <button onClick={logout} className="btn-ghost">
               Logout
             </button>
@@ -72,6 +78,22 @@ export default function App() {
             element={
               <RequireAuth>
                 <AnimeFinderPage />
+              </RequireAuth>
+            }
+          />
+          <Route
+            path="/notifications"
+            element={
+              <RequireAuth>
+                <NotificationsPage />
+              </RequireAuth>
+            }
+          />
+          <Route
+            path="/details/:type/:id"
+            element={
+              <RequireAuth>
+                <ItemDetailsPage />
               </RequireAuth>
             }
           />

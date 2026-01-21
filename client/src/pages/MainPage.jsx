@@ -1,8 +1,12 @@
 import React, { useEffect, useState } from "react";
 import { useAuth } from "../auth/AuthContext.jsx";
+import { useNavigate } from "react-router-dom";
+import NewReleasesBox from "../components/NewReleasesBox.jsx";
+import "../styles.css";
 
 export default function MainPage() {
   const { authFetch } = useAuth();
+  const navigate = useNavigate();
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -83,16 +87,28 @@ export default function MainPage() {
   return (
     <div>
       <h1>Main</h1>
+      <NewReleasesBox />
       <p>Popular anime & manga. Click subscribe to save to your list.</p>
       <div className="grid">
         {items.map((item) => (
           <div key={`${item.type}-${item.external_id}`} className="card">
             {item.image && (
-              <img src={item.image} alt={item.title} className="card-image" />
+              <img
+                src={item.image}
+                alt={item.title}
+                className="card-image"
+                style={{ cursor: "pointer" }}
+                onClick={() => navigate(`/details/${item.type}/${item.external_id}`)}
+              />
             )}
             <div className="card-body">
               <span className="badge">{item.type}</span>
-              <h3>{item.title}</h3>
+              <h3
+                style={{ cursor: "pointer" }}
+                onClick={() => navigate(`/details/${item.type}/${item.external_id}`)}
+              >
+                {item.title}
+              </h3>
               <p className="card-text">
                 {item.description
                   ? item.description.slice(0, 160) + "..."

@@ -1,8 +1,28 @@
 import express from "express";
 import axios from "axios";
 import { authMiddleware } from "../middleware/auth.js";
+import { supabase } from "../config/supabase.js";
 
 export const mainRouter = express.Router();
+
+mainRouter.get("/new-releases", authMiddleware, async (req, res) => {
+  try {
+    const { data, error } = await supabase
+      .from("new_releases")
+      .select("*")
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      console.error(error);
+      return res.status(500).json({ error: "DB Error" });
+    }
+
+    res.json({ items: data });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Server Error" });
+  }
+});
 
 mainRouter.get("/", authMiddleware, async (req, res) => {
   try {
@@ -11,6 +31,7 @@ mainRouter.get("/", authMiddleware, async (req, res) => {
         anime: Page(page: 1, perPage: $perPage) {
           media(type: ANIME, sort: [SCORE_DESC, POPULARITY_DESC]) {
             id
+            idMal
             title {
               romaji
               english
@@ -24,6 +45,7 @@ mainRouter.get("/", authMiddleware, async (req, res) => {
         manga: Page(page: 1, perPage: $perPage) {
           media(type: MANGA, sort: [SCORE_DESC, POPULARITY_DESC]) {
             id
+            idMal
             title {
               romaji
               english
@@ -50,19 +72,19 @@ mainRouter.get("/", authMiddleware, async (req, res) => {
       }
     );
 
-    const animeList = data.data.anime.media;
-    const mangaList = data.data.manga.media;
+    const animeList = data.data?.anime?.media || [];
+    const mangaList = data.data?.manga?.media || [];
 
     const items = [
       ...animeList.map((a) => ({
-        external_id: a.id,
+        external_id: a.idMal || a.id, // Prefer MAL ID for Jikan compatibility
         title: a.title.english || a.title.romaji,
         type: "anime",
         description: a.description,
         image: a.coverImage?.large,
       })),
       ...mangaList.map((m) => ({
-        external_id: m.id,
+        external_id: m.idMal || m.id, // Prefer MAL ID
         title: m.title.english || m.title.romaji,
         type: "manga",
         description: m.description,
