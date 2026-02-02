@@ -1,6 +1,6 @@
+import "dotenv/config";
 import express from "express";
 import cors from "cors";
-import dotenv from "dotenv";
 import { authRouter } from "./routes/auth.js";
 import { mainRouter } from "./routes/main.js";
 import { subRouter } from "./routes/sub.js";
@@ -8,7 +8,6 @@ import { animeFinderRouter } from "./routes/animefinder.js";
 import { notificationRouter } from "./routes/notification.js";
 import { initScheduler } from "./services/cronService.js";
 
-dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 4000;

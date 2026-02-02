@@ -27,7 +27,12 @@ export default function NotificationBell() {
     }, []);
 
     return (
-        <Link to="/notifications" className="notification-bell" style={{ position: "relative", display: "flex", alignItems: "center" }}>
+        <Link
+            to="/notifications"
+            className="notification-bell"
+            style={{ position: "relative", display: "flex", alignItems: "center" }}
+            onClick={() => setUnreadCount(0)}
+        >
             <Bell size={24} />
             {unreadCount > 0 && (
                 <span

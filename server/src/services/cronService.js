@@ -1,17 +1,17 @@
 import cron from "node-cron";
 import { supabase } from "../config/supabase.js";
-import { fetchAnimeSchedule, fetchMangaLatestChapter, sendEmailNotification } from "./jikanService.js";
+import { sendEmailNotification } from "./emailService.js";
+import { fetchAnilistAiringSchedule, fetchAnilistManga } from "./anilistService.js";
 import { checkAnimeUpdate, checkMangaUpdate } from "./matchingService.js";
 
 const processUpdates = async () => {
-    console.log("--- Starting Global Update Check (6-Hour Cycle) ---");
+    console.log("--- Starting Global Update Check (Anilist) ---");
 
-    // 1. Fetch Today's Anime from Jikan
-    const todayAnime = await fetchAnimeSchedule();
-    console.log(`[Jikan Debug] Fetched ${todayAnime.length} anime from today's schedule.`);
+    // 1. Fetch Today's Anime from Anilist
+    const todayAnime = await fetchAnilistAiringSchedule();
+    console.log(`[Anilist] Fetched ${todayAnime.length} airing episodes for today.`);
 
-    // 2. Fetch specific Manga updates based on what users are subscribed to
-    // We still need to know WHICH manga to check.
+    // 2. Fetch specific Manga updates based on subscriptions
     const { data: allItems, error: itemsError } = await supabase.from("items").select("*");
     if (itemsError) {
         console.error("Error fetching items:", itemsError);
@@ -22,19 +22,22 @@ const processUpdates = async () => {
     for (const item of allItems) {
         if (item.type === 'manga') {
             try {
-                const mangaData = await fetchMangaLatestChapter(item.title);
+                // Use Anilist for manga check
+                const mangaData = await fetchAnilistManga(item.title);
+
                 if (mangaData) {
+                    // Reuse existing matching logic, mapping fields if necessary
+                    // Anilist 'chapters' is total count, so it works with 'checkMangaUpdate'
                     const update = checkMangaUpdate(item, mangaData);
-                    if (update) { // Logic from matchingService says "this is new" or "status changed"
-                        // We format it for 'new_releases'
+
+                    if (update) {
                         mangaUpdates.push({
                             title: update.title,
                             type: 'manga',
                             release_info: update.message,
                             url: update.url,
                             image_url: update.image_url,
-                            mal_id: null,
-                            // We also need to update the ITEM table so we don't notify again next time
+                            mal_id: mangaData.mal_id,
                             db_item_id: item.id,
                             update_payload: {
                                 last_chapter: update.type === 'new_chapter' ? update.newValue : undefined,
@@ -48,8 +51,7 @@ const processUpdates = async () => {
                 console.error(`Error checking manga ${item.title}: ${e.message}`);
             }
         } else if (item.type === 'anime') {
-            // For anime, we update last_checked_at if we see it in today's schedule
-            // This prevents "Ongoing" logic from notifying every minute.
+            // For anime, update last_checked_at if it's in today's Anilist schedule
             const match = todayAnime.find(a => a.title.toLowerCase() === item.title.toLowerCase());
             if (match) {
                 await supabase.from("items").update({ last_checked_at: new Date() }).eq("id", item.id);
@@ -57,20 +59,20 @@ const processUpdates = async () => {
         }
     }
 
-    // 3. Prepare the "New Releases" List
-    // Anime: All from today's schedule
+    // 3. Prepare "New Releases" List
+    // Anime from Anilist schedule
     const animeReleases = todayAnime.map(a => ({
-        mal_id: a.mal_id,
+        mal_id: a.mal_id || a.anilist_id, // Fallback to Anilist ID if MAL ID is missing
         title: a.title,
         type: "anime",
-        release_info: "New Episode",
+        release_info: `Episode ${a.episode}`,
         url: a.url,
-        image_url: a.images.jpg.image_url
+        image_url: a.image_url
     }));
 
-    // Manga: Only the ones we found updates for
+    // Manga updates
     const mangaReleasesFormatted = mangaUpdates.map(m => ({
-        mal_id: m.mal_id,
+        mal_id: m.mal_id || m.anilist_id,
         title: m.title,
         type: m.type,
         release_info: m.release_info,
@@ -79,12 +81,11 @@ const processUpdates = async () => {
     }));
 
     const allNewReleases = [...animeReleases, ...mangaReleasesFormatted];
-    console.log(`[Cache] Prepared ${allNewReleases.length} items for new_releases (${animeReleases.length} Anime, ${mangaUpdates.length} Manga Updates).`);
+    console.log(`[Cache] Prepared ${allNewReleases.length} items for new_releases.`);
 
     // 4. Update 'new_releases' Cache
     if (allNewReleases.length > 0) {
-        // Safer delete: remove all rows before inserting NEW ones
-        const { error: clearError } = await supabase.from("new_releases").delete().neq("id", "00000000-0000-0000-0000-000000000000"); // Delete all
+        const { error: clearError } = await supabase.from("new_releases").delete().neq("id", "00000000-0000-0000-0000-000000000000");
         if (clearError) console.error("Error clearing new_releases:", clearError);
 
         const { error: insertError } = await supabase.from("new_releases").insert(allNewReleases);
@@ -110,6 +111,7 @@ const processUpdates = async () => {
     }
 
     const notificationsToSend = [];
+    const CLIENT_URL = "https://anime-finder-black.vercel.app"; // User requested specific domain
 
     for (const sub of subs) {
         if (!sub.items) continue;
@@ -130,7 +132,7 @@ const processUpdates = async () => {
                 user_id: sub.user_id,
                 title: match.release_info,
                 message: `${match.title} - ${match.release_info}`,
-                link: match.url,
+                link: `${CLIENT_URL}/main`,
                 is_read: false
             });
         }
@@ -182,7 +184,7 @@ const processUpdates = async () => {
                     <h1>New Updates!</h1>
                     <p>We found new content for your subscriptions:</p>
                     <ul>
-                        ${userNotifs.map(u => `<li><a href="${u.url}">${u.title}</a>: ${u.message}</li>`).join('')}
+                        ${userNotifs.map(u => `<li><a href="${u.link}">${u.title}</a>: ${u.message}</li>`).join('')}
                     </ul>
                 `;
                 try {

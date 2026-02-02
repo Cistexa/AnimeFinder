@@ -13,12 +13,15 @@ export default function MainPage() {
   const [subscribingId, setSubscribingId] = useState(null);
   const [subscribedKeys, setSubscribedKeys] = useState(new Set());
   const [unsubscribingKey, setUnsubscribingKey] = useState(null);
+  const [page, setPage] = useState(1);
 
   useEffect(() => {
     const load = async () => {
+      window.scrollTo(0, 0); // Scroll to top when page loads/changes
+      setLoading(true); // Ensure loading state is true when fetching new page
       try {
         const [mainData, subData] = await Promise.all([
-          authFetch("/main"),
+          authFetch(`/main?page=${page}`),
           authFetch("/sub"),
         ]);
         setItems(mainData.items || []);
@@ -35,7 +38,7 @@ export default function MainPage() {
       }
     };
     load();
-  }, [authFetch]);
+  }, [authFetch, page]);
 
   const keyFor = (item) => `${item.type}:${item.title}`;
 
@@ -81,7 +84,7 @@ export default function MainPage() {
     }
   };
 
-  if (loading) return <div className="center-card">Loading...</div>;
+  if (loading && items.length === 0) return <div className="center-card">Loading...</div>;
   if (error) return <div className="center-card error">{error}</div>;
 
   return (
@@ -141,6 +144,23 @@ export default function MainPage() {
             </div>
           </div>
         ))}
+      </div>
+
+      <div className="pagination" style={{ display: "flex", justifyContent: "center", gap: "10px", marginTop: "20px", paddingBottom: "20px" }}>
+        <button
+          className="btn-secondary"
+          disabled={page <= 1}
+          onClick={() => setPage(p => p - 1)}
+        >
+          Previous
+        </button>
+        <span style={{ alignSelf: "center", fontSize: "1.2rem" }}>Page {page}</span>
+        <button
+          className="btn-secondary"
+          onClick={() => setPage(p => p + 1)}
+        >
+          Next
+        </button>
       </div>
     </div>
   );

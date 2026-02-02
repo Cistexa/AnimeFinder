@@ -26,9 +26,11 @@ mainRouter.get("/new-releases", authMiddleware, async (req, res) => {
 
 mainRouter.get("/", authMiddleware, async (req, res) => {
   try {
+    const page = parseInt(req.query.page) || 1;
+    console.log(`[Main] Fetching page ${page}`);
     const query = `
-      query ($perPage: Int) {
-        anime: Page(page: 1, perPage: $perPage) {
+      query ($page: Int, $perPage: Int) {
+        anime: Page(page: $page, perPage: $perPage) {
           media(type: ANIME, sort: [SCORE_DESC, POPULARITY_DESC]) {
             id
             idMal
@@ -42,7 +44,7 @@ mainRouter.get("/", authMiddleware, async (req, res) => {
             }
           }
         }
-        manga: Page(page: 1, perPage: $perPage) {
+        manga: Page(page: $page, perPage: $perPage) {
           media(type: MANGA, sort: [SCORE_DESC, POPULARITY_DESC]) {
             id
             idMal
@@ -63,7 +65,7 @@ mainRouter.get("/", authMiddleware, async (req, res) => {
       "https://graphql.anilist.co",
       {
         query,
-        variables: { perPage: 25 },
+        variables: { page, perPage: 25 }, // 25 anime + 25 manga = 50 items
       },
       {
         headers: {
