@@ -13,8 +13,10 @@ mainRouter.get("/new-releases", authMiddleware, async (req, res) => {
       .order("created_at", { ascending: false });
 
     if (error) {
-      console.error(error);
-      return res.status(500).json({ error: "DB Error" });
+      console.error("Supabase error fetching new_releases:", error);
+      return res
+        .status(500)
+        .json({ error: error.message || "DB Error", details: error });
     }
 
     res.json({ items: data });
